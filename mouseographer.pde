@@ -15,6 +15,12 @@ void setup ()
     background(255);
     stroke(0, 33);
     current.setLocation(MouseInfo.getPointerInfo().getLocation());
+    
+    addMouseWheelListener(new java.awt.event.MouseWheelListener () { 
+        public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) { 
+            mouseWheel(evt.getWheelRotation());
+        }
+    });
 }
 
 void draw ()
@@ -27,6 +33,34 @@ void draw ()
 
 void keyPressed ()
 {
-    // press c to clear screen
-    if (key == 'c') background(255);
+    switch (key) {
+        // clear
+        case 'c':
+            background(255);
+            break;
+        // left click
+        case 'l':
+            stroke(0, 50);
+            line(current.x*zoom-2, current.y*zoom-2, current.x*zoom+2, current.y*zoom+2);
+            line(current.x*zoom+2, current.y*zoom-2, current.x*zoom-2, current.y*zoom+2);
+            stroke(0, 33);
+            break;
+        // double click
+        case 'd':
+            stroke(0, 50);
+            line(current.x*zoom-2, current.y*zoom-2, current.x*zoom+2, current.y*zoom+2);
+            line(current.x*zoom+2, current.y*zoom-2, current.x*zoom-2, current.y*zoom+2);
+            line(current.x*zoom, current.y*zoom-2, current.x*zoom, current.y*zoom+2);
+            line(current.x*zoom+2, current.y*zoom, current.x*zoom-2, current.y*zoom);
+            stroke(0, 33);
+            break;
+        // wheel
+        case 'w':
+            
+    }
+}
+
+void mouseWheel (int delta)
+{
+    println(delta); 
 }
