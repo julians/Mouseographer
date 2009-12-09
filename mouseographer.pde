@@ -8,6 +8,8 @@ float screenWidth = 1920;
 float screenHeight = 1200;
 float zoom = 0.5;
 
+ArrayList history = new ArrayList();
+
 void setup ()
 {
     size((int) (screenWidth*zoom), (int) (screenHeight*zoom));
@@ -28,7 +30,10 @@ void draw ()
     old.setLocation(current);
     current.setLocation(MouseInfo.getPointerInfo().getLocation());
     
-    if (!current.equals(old)) line(old.x*zoom, old.y*zoom, current.x*zoom, current.y*zoom);
+    if (!current.equals(old)) {
+        line(old.x*zoom, old.y*zoom, current.x*zoom, current.y*zoom);
+        history.add("m " + old.x + " " + old.y + " " + current.x + " " + current.y);
+    }
 }
 
 void keyPressed ()
@@ -37,6 +42,7 @@ void keyPressed ()
         // clear
         case 'c':
             background(255);
+            history.clear();
             break;
         // left click
         case 'l':
@@ -44,6 +50,7 @@ void keyPressed ()
             line(current.x*zoom-2, current.y*zoom-2, current.x*zoom+2, current.y*zoom+2);
             line(current.x*zoom+2, current.y*zoom-2, current.x*zoom-2, current.y*zoom+2);
             stroke(0, 33);
+            history.add("l " + old.x + " " + old.y + " " + current.x + " " + current.y);
             break;
         // double click
         case 'd':
@@ -53,14 +60,30 @@ void keyPressed ()
             line(current.x*zoom, current.y*zoom-2, current.x*zoom, current.y*zoom+2);
             line(current.x*zoom+2, current.y*zoom, current.x*zoom-2, current.y*zoom);
             stroke(0, 33);
+            history.add("d " + old.x + " " + old.y + " " + current.x + " " + current.y);
             break;
-        // wheel
-        case 'w':
-            
+        // save
+        case 's':
+            String savePath = selectOutput();  // Opens file chooser
+            if (savePath == null) {
+                println("No output file was selected...");
+            } else {
+                println(savePath);
+                PrintWriter writer = createWriter(savePath);
+                if (writer == null) {
+                    println("gah");
+                } else {
+                    for (int i = 0; i < history.size(); i++) {
+                        writer.write((String) history.get(i) + "\n");
+                    }
+                    writer.close();
+                }
+            }
     }
 }
 
 void mouseWheel (int delta)
 {
     println(delta); 
+    history.add("w:" + delta + " " + old.x + " " + old.y + " " + current.x + " " + current.y);
 }
