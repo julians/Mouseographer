@@ -10,6 +10,8 @@ float zoom = 0.5;
 
 ArrayList history = new ArrayList();
 
+int eventID = 0;
+
 void setup ()
 {
     size((int) (screenWidth*zoom), (int) (screenHeight*zoom));
@@ -32,7 +34,8 @@ void draw ()
     
     if (!current.equals(old)) {
         line(old.x*zoom, old.y*zoom, current.x*zoom, current.y*zoom);
-        history.add("m " + old.x + " " + old.y + " " + current.x + " " + current.y);
+        history.add(eventID + " m " + old.x + " " + old.y + " " + current.x + " " + current.y);
+        eventID++;
     }
 }
 
@@ -50,7 +53,8 @@ void keyPressed ()
             line(current.x*zoom-2, current.y*zoom-2, current.x*zoom+2, current.y*zoom+2);
             line(current.x*zoom+2, current.y*zoom-2, current.x*zoom-2, current.y*zoom+2);
             stroke(0, 33);
-            history.add("l " + old.x + " " + old.y + " " + current.x + " " + current.y);
+            history.add(eventID + " l " + old.x + " " + old.y + " " + current.x + " " + current.y);
+            eventID++;
             break;
         // double click
         case 'd':
@@ -60,7 +64,8 @@ void keyPressed ()
             line(current.x*zoom, current.y*zoom-2, current.x*zoom, current.y*zoom+2);
             line(current.x*zoom+2, current.y*zoom, current.x*zoom-2, current.y*zoom);
             stroke(0, 33);
-            history.add("d " + old.x + " " + old.y + " " + current.x + " " + current.y);
+            history.add(eventID + " d " + old.x + " " + old.y + " " + current.x + " " + current.y);
+            eventID++;
             break;
         // save
         case 's':
@@ -85,5 +90,6 @@ void keyPressed ()
 void mouseWheel (int delta)
 {
     println(delta); 
-    history.add("w:" + delta + " " + old.x + " " + old.y + " " + current.x + " " + current.y);
+    history.add(eventID + " w:" + delta + " " + old.x + " " + old.y + " " + current.x + " " + current.y);
+    eventID++;
 }
