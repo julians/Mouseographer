@@ -1,15 +1,13 @@
 import java.awt.*;
 import java.awt.geom.Point2D;
-//import processing.pdf.*;
 
 float screenWidth = 1920;
 float screenHeight = 1200;
 float zoom = 0.5;
 
-boolean spatial = true;
 float x = 5;
 float y = 5;
-float xIncrement = 5;
+float yIncrement = 5;
 float border = 5;
 float yFinal = 0;
 
@@ -44,6 +42,12 @@ static final int KEYUP = 11;
 static final int WHEEL = 22;
 
 boolean debug = false;
+
+static final int SPATIAL = 0;
+static final int LINEAR = 1;
+static final int ORDERED = 2;
+
+int mode = SPATIAL;
 
 void setup ()
 {
@@ -81,34 +85,96 @@ void loadHistory ()
 void parseStringHistory (String[] stringHistory)
 {
     if (debug) println("Parsing history log file.");
-    history = new float[stringHistory.length][12];
+    float[][] tHistory = new float[stringHistory.length][12];
     String[] s;
     
+    int k = 0;
     for (int i = 0; i < stringHistory.length; i++) {
         s = stringHistory[i].split(" ");
         
         // we don’t want no comments
         if (!s[0].equals("//")) {
             for (int j = 0; j < s.length; j++) {
-                history[i][j] = Float.parseFloat(s[j]);
+                tHistory[k][j] = Float.parseFloat(s[j]);
             }
+            k++;
         }
     }
     stringHistory = null;
+    
+    // the tHistory array is bigger than it needs to be
+    // and we don’t want to loop through empty elements later,
+    // therefor we copy it into a dapper new array with a snug fit
+    history = new float[k+1][12];
+    System.arraycopy(tHistory, 0, history, 0, k+1);
     if (debug) println("Done parsing history log file.");
 }
 
 void replayHistory ()
 {
     if (debug) println("Replaying history.");
-    for (int i = 0; i < history.length; i++) {
-        drawMouseTrail(i);
-    }
-    stroke(0);
-    for (int i = 0; i < history.length; i++) {
-        drawDetails(i);
+    if (mode == SPATIAL) {
+        for (int i = 0; i < history.length; i++) {
+            drawMouseTrail(i);
+        }
+        stroke(0);
+        for (int i = 0; i < history.length; i++) {
+            drawDetails(i);
+        }        
+    } else if (mode == LINEAR) {
+        drawLinear();
     }
     if (debug) println("Done replaying history.");
+}
+
+void drawLinear ()
+{
+    float blah = 0;
+    
+    for (int l = 1; l < history.length; l++) {        
+        if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && blah > 0) {
+            if (history[l-1][TYPE] == MOVE) {
+                stroke(0, 50);
+            } else {
+                stroke(0, 128);
+            }
+            while (blah > 0) {
+                if (blah > width - border - x) {
+                    line(x, y, width - border, y);
+                    y += yIncrement;
+                    blah -= width - border - x;
+                    x = border;
+                } else {
+                    line(x, y, x + blah, y);
+                    x += blah;
+                    blah = 0;
+                }
+            }
+            blah = 0;
+        }
+        
+        if (history[l][TYPE] == LUP) {
+            if (history[l-1][TYPE] == LDRAG) {
+                // drag end
+                stroke(0, 128);
+                line((int) x, y, (int) x-3, y+2);
+                line((int) x, y, (int) x-3, y-2);
+            } else if (history[l-1][TYPE] == LDOWN) {
+                // left click
+                stroke(0, 128);
+                line((int) x-2, y-2, (int) x+2, y+2);
+                line((int) x+2, y-2, (int) x-2, y+2);
+            }
+        } else if (history[l][TYPE] == LDOWN) {
+            if (history[l+1][TYPE] == LDRAG) {
+                // drag start
+                stroke(0, 128);
+                line((int) x, y + 2, (int) x, y - 2);
+            }
+        }
+        
+        blah += getDistance(l, l-1) * zoom;
+    }
 }
 
 void drawDetails (int l)
@@ -182,4 +248,11 @@ float getAngle(int a, int b)
     PVector c = new PVector(history[b][POINTX], history[b][POINTY]);
     c.sub(o);
     return c.heading2D();
+}
+
+float getDistance (int a, int b)
+{
+    PVector o = new PVector(history[a][POINTX], history[a][POINTY]);
+    PVector c = new PVector(history[b][POINTX], history[b][POINTY]);
+    return PVector.dist(o, c);
 }
