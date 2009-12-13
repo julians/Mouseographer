@@ -1,13 +1,10 @@
-import java.awt.*;
-import java.awt.geom.Point2D;
-
 float screenWidth = 1920;
 float screenHeight = 1200;
 float zoom = 0.5;
 
 float x = 5;
 float y = 5;
-float yIncrement = 5;
+float yIncrement = 8;
 float border = 5;
 float yFinal = 0;
 
@@ -39,6 +36,7 @@ static final int LDRAG = 6;
 static final int RDRAG = 7;
 static final int KEYDOWN = 10;
 static final int KEYUP = 11;
+static final int FLAGSCHANGED = 12;
 static final int WHEEL = 22;
 
 boolean debug = false;
@@ -47,7 +45,7 @@ static final int SPATIAL = 0;
 static final int LINEAR = 1;
 static final int ORDERED = 2;
 
-int mode = SPATIAL;
+int mode = LINEAR;
 
 void setup ()
 {
@@ -131,7 +129,9 @@ void drawLinear ()
 {
     float blah = 0;
     
-    for (int l = 1; l < history.length; l++) {        
+    for (int l = 1; l < history.length; l++) {     
+        if (history[l][TYPE] == FLAGSCHANGED) continue;
+        
         if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && blah > 0) {
             if (history[l-1][TYPE] == MOVE) {
                 stroke(0, 50);
@@ -140,30 +140,33 @@ void drawLinear ()
             }
             while (blah > 0) {
                 if (blah > width - border - x) {
-                    line(x, y, width - border, y);
+                    line((int) x, y, (int) (width - border), y);
                     y += yIncrement;
                     blah -= width - border - x;
                     x = border;
                 } else {
-                    line(x, y, x + blah, y);
-                    x += blah;
+                    line((int) x, y, (int) (x + blah), y);
+                    x += blah + 3;
                     blah = 0;
                 }
             }
             blah = 0;
         }
-        
         if (history[l][TYPE] == LUP) {
             if (history[l-1][TYPE] == LDRAG) {
                 // drag end
+                // let’s call this kerning
+                x -= 3;
                 stroke(0, 128);
                 line((int) x, y, (int) x-3, y+2);
                 line((int) x, y, (int) x-3, y-2);
+                x += 3;
             } else if (history[l-1][TYPE] == LDOWN) {
                 // left click
                 stroke(0, 128);
                 line((int) x-2, y-2, (int) x+2, y+2);
                 line((int) x+2, y-2, (int) x-2, y+2);
+                x += 3;
             }
         } else if (history[l][TYPE] == LDOWN) {
             if (history[l+1][TYPE] == LDRAG) {
@@ -172,7 +175,6 @@ void drawLinear ()
                 line((int) x, y + 2, (int) x, y - 2);
             }
         }
-        
         blah += getDistance(l, l-1) * zoom;
     }
 }
