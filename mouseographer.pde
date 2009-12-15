@@ -2,11 +2,10 @@ float screenWidth = 1920;
 float screenHeight = 1200;
 float zoom = 0.5;
 
-float x = 5;
-float y = 5;
+float x = 10;
+float y = 10;
 float yIncrement = 8;
-float border = 5;
-float yFinal = 0;
+float border = 10;
 
 float[][] history;
 
@@ -48,6 +47,10 @@ static final int LINEAR = 1;
 static final int ORDERED = 2;
 
 int mode = LINEAR;
+
+float flags = 0;
+float prevFlags = 0;
+int kerning = 0;
 
 void setup ()
 {
@@ -123,7 +126,6 @@ void parseStringHistory (String[] stringHistory)
 void replayHistory ()
 {
     if (debug) println("Replaying history.");
-    background(255);
     if (mode == SPATIAL) {
         for (int i = 0; i < history.length; i++) {
             drawMouseTrail(i);
@@ -141,7 +143,6 @@ void replayHistory ()
 void keyPressed ()
 {
     if (key == CODED && (keyCode == LEFT || keyCode == RIGHT)) {
-        println(mode);
         if (keyCode == LEFT) {
             mode--;
             if (mode < 0) mode = 2;
@@ -149,7 +150,7 @@ void keyPressed ()
             mode++;
             if (mode > 2) mode = 0;
         }
-        println(mode);
+        if (debug) println(mode);
         go = true;
         loop();
     }
@@ -159,51 +160,97 @@ void drawLinear ()
 {
     float blah = 0;
     
-    for (int l = 1; l < history.length; l++) {     
-        if (history[l][TYPE] == FLAGSCHANGED) continue;
+    for (int l = 1; l < history.length; l++) {      
+        // shift, command, alt, etc.
+        prevFlags = flags;
+        flags = 0;
+        for (int i = COMMAND; i < FN+1; i++) {
+            flags += history[l][i];
+        }
         
+        // mouse trail
+        kerning = -3;
         if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && blah > 0) {
-            if (history[l-1][TYPE] == MOVE) {
-                stroke(0, 50);
-            } else {
-                stroke(0, 128);
-            }
             while (blah > 0) {
                 if (blah > width - border - x) {
+                    if (history[l-1][TYPE] == MOVE) {
+                        stroke(0, 50);
+                    } else {
+                        stroke(0, 128);
+                    }
                     line((int) x, y, (int) (width - border), y);
+                    if (prevFlags > 0) {
+                        stroke(0, 24*prevFlags);
+                        line((int) x + kerning, y-2, (int) (width - border), y-2);
+                    }
                     y += yIncrement;
                     blah -= width - border - x;
                     x = border;
                 } else {
+                    if (history[l-1][TYPE] == MOVE) {
+                        stroke(0, 50);
+                    } else {
+                        stroke(0, 128);
+                    }
                     line((int) x, y, (int) (x + blah), y);
+                    if (prevFlags > 0) {
+                        stroke(0, 24*prevFlags);
+                        line((int) x + kerning, y-2, (int) (x + blah), y-2);
+                    }
                     x += blah + 3;
                     blah = 0;
                 }
+                kerning = 0;
             }
             blah = 0;
         }
+
+        if (flags > prevFlags) {
+            kerning = (history[l-2][TYPE] == LDOWN && history[l-1][TYPE] != LDRAG) ? 2 : 0;
+            stroke(0, 128);
+            rect((int) x + kerning, (int) y-2, 4, 4);
+            x += 7;
+        }
+        
         if (history[l][TYPE] == LUP) {
             if (history[l-1][TYPE] == LDRAG) {
                 // drag end
-                // let’s call this kerning
-                x -= 3;
                 stroke(0, 128);
-                line((int) x, y, (int) x-3, y+2);
-                line((int) x, y, (int) x-3, y-2);
-                x += 3;
+                line((int) x-3, y, (int) x-6, y+2);
+                line((int) x-3, y, (int) x-6, y-2);
             } else if (history[l-1][TYPE] == LDOWN) {
+                if (history[l-2][TYPE] == LUP && history[l-3][TYPE] == LDOWN) {
+                    kerning = 3;
+                } else {
+                    kerning = 0;
+                }
                 // left click
                 stroke(0, 128);
-                line((int) x-2, y-2, (int) x+2, y+2);
-                line((int) x+2, y-2, (int) x-2, y+2);
-                x += 3;
+                line((int) x-2+kerning, y-2, (int) x+2+kerning, y+2);
+                line((int) x+2+kerning, y-2, (int) x-2+kerning, y+2);
+                x += 3 + kerning;
             }
         } else if (history[l][TYPE] == LDOWN) {
             if (history[l+1][TYPE] == LDRAG) {
                 // drag start
+                if (history[l-1][TYPE] == LUP && history[l-2][TYPE] == LDOWN) {
+                    kerning = 2;
+                } else {
+                    kerning = 0;
+                }
                 stroke(0, 128);
-                line((int) x, y + 2, (int) x, y - 2);
+                line((int) x + kerning, y + 2, (int) x + kerning, y - 2);
+                x += kerning;
             }
+        }
+        
+        // regular typing
+        if (history[l][TYPE] == KEYUP) {
+           if (history[l-1][TYPE] == KEYDOWN || history[l-1][TYPE] == KEYUP) {
+               stroke(0, 128);
+               rect((int) x + 2, (int) y-2, 4, 4);
+               x += 7;
+           } 
         }
         blah += getDistance(l, l-1) * zoom;
     }
@@ -233,7 +280,7 @@ void drawDetails (int l)
             line(history[l][POINTX]*zoom-2, history[l][POINTY]*zoom-2, history[l][POINTX]*zoom+2, history[l][POINTY]*zoom+2);
             line(history[l][POINTX]*zoom+2, history[l][POINTY]*zoom-2, history[l][POINTX]*zoom-2, history[l][POINTY]*zoom+2);
         }
-    } else if (history[l][TYPE] == LUP) {
+    } else if (history[l][TYPE] == LUP && l > 0) {
         if (history[l-1][TYPE] == LDRAG) {
             // drag end
             int i = l-1;
