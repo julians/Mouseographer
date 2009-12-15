@@ -39,8 +39,6 @@ static final int FLAGSCHANGED = 12;
 static final int WHEEL = 22;
 
 boolean debug = false;
-boolean launch = true;
-boolean go = false;
 
 static final int SPATIAL = 0;
 static final int LINEAR = 1;
@@ -56,25 +54,16 @@ void setup ()
 {
     size((int) (screenWidth*zoom), (int) (screenHeight*zoom));
     smooth();
+    loadHistory();
 }
 
 void draw ()
 {
-    if (go) {
-        background(255);
-        stroke(0, 50);
-        noFill();
-        replayHistory();
-        go = false;
-        noLoop();
-    } else if (launch) {
-        background(255);
-        stroke(0, 50);
-        noFill();
-        loadHistory();
-        launch = false;
-        noLoop();
-    }
+    background(255);
+    stroke(0, 50);
+    noFill();
+    replayHistory();
+    noLoop();
 }
 
 void loadHistory ()
@@ -90,7 +79,6 @@ void loadHistory ()
             if (debug) println("Gah. File does not exist.");
         } else {
             parseStringHistory(lines);
-            replayHistory();
         }
     }
 }
@@ -151,7 +139,6 @@ void keyPressed ()
             if (mode > 2) mode = 0;
         }
         if (debug) println(mode);
-        go = true;
         loop();
     }
 }
