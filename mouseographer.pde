@@ -145,7 +145,7 @@ void keyPressed ()
 
 void drawLinear ()
 {
-    float blah = 0;
+    float distance = 0;
     
     for (int l = 1; l < history.length; l++) {      
         // shift, command, alt, etc.
@@ -157,9 +157,9 @@ void drawLinear ()
         
         // mouse trail
         kerning = -3;
-        if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && blah > 0) {
-            while (blah > 0) {
-                if (blah > width - border - x) {
+        if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && distance > 0) {
+            while (distance > 0) {
+                if (distance > width - border - x) {
                     if (history[l-1][TYPE] == MOVE) {
                         stroke(0, 50);
                     } else {
@@ -171,7 +171,7 @@ void drawLinear ()
                         line((int) x + kerning, y-2, (int) (width - border), y-2);
                     }
                     y += yIncrement;
-                    blah -= width - border - x;
+                    distance -= width - border - x;
                     x = border;
                 } else {
                     if (history[l-1][TYPE] == MOVE) {
@@ -179,17 +179,17 @@ void drawLinear ()
                     } else {
                         stroke(0, 128);
                     }
-                    line((int) x, y, (int) (x + blah), y);
+                    line((int) x, y, (int) (x + distance), y);
                     if (prevFlags > 0) {
                         stroke(0, 24*prevFlags);
-                        line((int) x + kerning, y-2, (int) (x + blah), y-2);
+                        line((int) x + kerning, y-2, (int) (x + distance), y-2);
                     }
-                    x += blah + 3;
-                    blah = 0;
+                    x += distance + 3;
+                    distance = 0;
                 }
                 kerning = 0;
             }
-            blah = 0;
+            distance = 0;
         }
 
         if (flags > prevFlags) {
@@ -239,7 +239,7 @@ void drawLinear ()
                x += 7;
            } 
         }
-        blah += getDistance(l, l-1) * zoom;
+        distance += getDistance(l, l-1) * zoom;
     }
     
     x = border;
