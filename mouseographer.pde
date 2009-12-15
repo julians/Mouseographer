@@ -40,6 +40,8 @@ static final int FLAGSCHANGED = 12;
 static final int WHEEL = 22;
 
 boolean debug = false;
+boolean launch = true;
+boolean go = false;
 
 static final int SPATIAL = 0;
 static final int LINEAR = 1;
@@ -55,11 +57,21 @@ void setup ()
 
 void draw ()
 {
-    background(255);
-    stroke(0, 50);
-    noFill();
-    loadHistory();
-    noLoop();
+    if (go) {
+        background(255);
+        stroke(0, 50);
+        noFill();
+        replayHistory();
+        go = false;
+        noLoop();
+    } else if (launch) {
+        background(255);
+        stroke(0, 50);
+        noFill();
+        loadHistory();
+        launch = false;
+        noLoop();
+    }
 }
 
 void loadHistory ()
@@ -103,14 +115,15 @@ void parseStringHistory (String[] stringHistory)
     // the tHistory array is bigger than it needs to be
     // and we don’t want to loop through empty elements later,
     // therefor we copy it into a dapper new array with a snug fit
-    history = new float[k+1][12];
-    System.arraycopy(tHistory, 0, history, 0, k+1);
+    history = new float[k][12];
+    System.arraycopy(tHistory, 0, history, 0, k);
     if (debug) println("Done parsing history log file.");
 }
 
 void replayHistory ()
 {
     if (debug) println("Replaying history.");
+    background(255);
     if (mode == SPATIAL) {
         for (int i = 0; i < history.length; i++) {
             drawMouseTrail(i);
@@ -123,6 +136,23 @@ void replayHistory ()
         drawLinear();
     }
     if (debug) println("Done replaying history.");
+}
+
+void keyPressed ()
+{
+    if (key == CODED && (keyCode == LEFT || keyCode == RIGHT)) {
+        println(mode);
+        if (keyCode == LEFT) {
+            mode--;
+            if (mode < 0) mode = 2;
+        } else {
+            mode++;
+            if (mode > 2) mode = 0;
+        }
+        println(mode);
+        go = true;
+        loop();
+    }
 }
 
 void drawLinear ()
@@ -177,6 +207,9 @@ void drawLinear ()
         }
         blah += getDistance(l, l-1) * zoom;
     }
+    
+    x = border;
+    y = border;
 }
 
 void drawDetails (int l)
