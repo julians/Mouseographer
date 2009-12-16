@@ -60,7 +60,6 @@ void setup ()
 void draw ()
 {
     background(255);
-    stroke(0, 50);
     noFill();
     replayHistory();
     noLoop();
@@ -69,7 +68,7 @@ void draw ()
 void loadHistory ()
 {
     //String loadPath = selectInput();
-    String loadPath = "sample.log";
+    String loadPath = "2.log";
     if (loadPath == null) {
         if (debug) println("No output file selected.");
     } else {
@@ -115,10 +114,11 @@ void replayHistory ()
 {
     if (debug) println("Replaying history.");
     if (mode == SPATIAL) {
+        stroke(0, 50);
         for (int i = 0; i < history.length; i++) {
-            drawMouseTrail(i);
+            drawMouseTrailSegment(i, true, true);
         }
-        stroke(0);
+        stroke(0, 128);
         for (int i = 0; i < history.length; i++) {
             drawDetails(i);
         }        
@@ -158,7 +158,7 @@ void drawLinear ()
         // mouse trail
         kerning = -3;
         if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && distance > 0) {
-            while (distance > 0) {
+            while (distance > 2) {
                 if (distance > width - border - x) {
                     if (history[l-1][TYPE] == MOVE) {
                         stroke(0, 50);
@@ -182,7 +182,11 @@ void drawLinear ()
                     line((int) x, y, (int) (x + distance), y);
                     if (prevFlags > 0) {
                         stroke(0, 24*prevFlags);
-                        line((int) x + kerning, y-2, (int) (x + distance), y-2);
+                        int wee = 0;
+                        if (history[l][TYPE] == KEYDOWN || history[l][TYPE] == FLAGSCHANGED) {
+                            wee = 2;
+                        }
+                        line((int) x + kerning, y-2, (int) (x + distance + wee), y-2);
                     }
                     x += distance + 3;
                     distance = 0;
@@ -207,15 +211,19 @@ void drawLinear ()
                 line((int) x-3, y, (int) x-6, y-2);
             } else if (history[l-1][TYPE] == LDOWN) {
                 if (history[l-2][TYPE] == LUP && history[l-3][TYPE] == LDOWN) {
-                    kerning = 3;
+                    kerning = 2;
                 } else {
                     kerning = 0;
                 }
                 // left click
                 stroke(0, 128);
-                line((int) x-2+kerning, y-2, (int) x+2+kerning, y+2);
-                line((int) x+2+kerning, y-2, (int) x-2+kerning, y+2);
-                x += 3 + kerning;
+                beginShape();
+                vertex((int) x+kerning, (int) y-2);
+                vertex((int) x+kerning, (int) y+2);
+                vertex((int) x+kerning+4, (int) y+2);
+                vertex((int) x+kerning, (int) y-2);
+                endShape();
+                x += 5 + kerning;
             }
         } else if (history[l][TYPE] == LDOWN) {
             if (history[l+1][TYPE] == LDRAG) {
@@ -264,8 +272,12 @@ void drawDetails (int l)
             resetMatrix();
         } else {
             // left click
-            line(history[l][POINTX]*zoom-2, history[l][POINTY]*zoom-2, history[l][POINTX]*zoom+2, history[l][POINTY]*zoom+2);
-            line(history[l][POINTX]*zoom+2, history[l][POINTY]*zoom-2, history[l][POINTX]*zoom-2, history[l][POINTY]*zoom+2);
+            beginShape();
+            vertex((int) history[l][POINTX]*zoom, (int) history[l][POINTY]*zoom-2);
+            vertex((int) history[l][POINTX]*zoom, (int) history[l][POINTY]*zoom+2);
+            vertex((int) history[l][POINTX]*zoom+4, (int) history[l][POINTY]*zoom+2);
+            vertex((int) history[l][POINTX]*zoom, (int) history[l][POINTY]*zoom-2);
+            endShape();
         }
     } else if (history[l][TYPE] == LUP && l > 0) {
         if (history[l-1][TYPE] == LDRAG) {
@@ -282,6 +294,32 @@ void drawDetails (int l)
             line(0, 0, -3, -3);
             line(0, 0, -3, 3);
             resetMatrix();
+        }
+    }
+}
+
+void drawMouseTrailSegment (int l, boolean age, boolean weight)
+{
+    if (l > 0) {
+        strokeWeight(1);
+        if (age) {
+            stroke(0, map(history[l][TIME], history[0][TIME], history[history.length-1][TIME], 8, 96));
+        } else {
+            stroke(0, 50);
+        }
+        if (history[l][TYPE] == MOVE) {
+            line(history[l-1][POINTX]*zoom, history[l-1][POINTY]*zoom, history[l][POINTX]*zoom, history[l][POINTY]*zoom);
+        } else if (history[l][TYPE] == LDRAG) {
+            if (weight) {
+                strokeWeight(2);
+            } else {
+                if (age) {
+                    stroke(0, map(history[l][TIME], history[0][TIME], history[history.length-1][TIME], 96, 128));                
+                } else {
+                    stroke(0, 128);
+                }
+            }
+            line(history[l-1][POINTX]*zoom, history[l-1][POINTY]*zoom, history[l][POINTX]*zoom, history[l][POINTY]*zoom);
         }
     }
 }
