@@ -197,7 +197,7 @@ void drawLinear ()
         kerning = -3;
         if (history[l][TYPE] != MOVE && history[l][TYPE] != LDRAG && distance > 0) {
             while (distance > 2) {
-                if (x != border) x += 3;
+                if (drawn != NOTHING && drawn != DRAGSTART) x += 3;
                 if (distance > width - border - x) {
                     if (history[l-1][TYPE] == LDRAG) {
                         stroke(0, 128);
@@ -238,8 +238,13 @@ void drawLinear ()
         }
 
         if (flags > prevFlags) {
-            kerning = drawn == CLICK ? 2 : 0;
-            x += 3 + kerning;
+            x += 3;
+            if (drawn == CLICK) x += 2;
+            if (x + 4 > width - border) {
+                kerning = 0;
+                x = border;
+                y += yIncrement;
+            }
             stroke(0, 128);
             rect((int) x, (int) y-2, 4, 4);
             x += 4;
@@ -262,21 +267,21 @@ void drawLinear ()
                     g = -1;
                     drawn = DRAGEND;
                 } else if (history[l-g][TYPE] == LDOWN) {
-                    if (drawn == CLICK) {
-                        kerning = 2;
-                    } else {
-                        kerning = 0;
-                    }
                     // left click
                     x += 3;
+                    if (drawn == CLICK) x += 2;
+                    if (x > width + border) {
+                        x = border;
+                        y += yIncrement;
+                    }
                     stroke(0, 128);
                     beginShape();
-                    vertex((int) x+kerning, (int) y-2);
-                    vertex((int) x+kerning, (int) y+2);
-                    vertex((int) x+kerning+4, (int) y+2);
-                    vertex((int) x+kerning, (int) y-2);
+                    vertex((int) x, (int) y-2);
+                    vertex((int) x, (int) y+2);
+                    vertex((int) x+4, (int) y+2);
+                    vertex((int) x, (int) y-2);
                     endShape();
-                    x += 2 + kerning;
+                    x += 2;
                     g = -1;
                     drawn = CLICK;
                 }
@@ -286,23 +291,48 @@ void drawLinear ()
             if (history[l+1][TYPE] == LDRAG) {
                 // drag start
                 x += 3;
-                if (drawn == CLICK) {
-                    kerning = 2;
-                } else {
-                    kerning = 0;
+                if (drawn == CLICK) x += 2;
+                if (x > width - border) {
+                    x = border;
+                    y += yIncrement;
                 }
                 stroke(0, 128);
-                line((int) x + kerning, y + 2, (int) x + kerning, y - 2);
-                x += kerning - 3;
+                line((int) x, y + 2, (int) x, y - 2);
+                x += 1;
                 drawn = DRAGSTART;
+            }
+        } else if (history[l][TYPE] == RUP) {
+            if (history[l-1][TYPE] == RDOWN) {
+                // right click
+                x += 3;
+                if (drawn == CLICK) x += 2;
+                if (x > width + border) {
+                    x = border;
+                    y += yIncrement;
+                }
+                fill(255, 0, 0);
+                stroke(0, 128);
+                beginShape();
+                vertex((int) x, (int) y-2);
+                vertex((int) x+4, (int) y-2);
+                vertex((int) x+4, (int) y+2);
+                vertex((int) x, (int) y-2);
+                endShape();
+                noFill();
+                x += 2;
+                drawn = CLICK;
             }
         }
         
         // regular typing
         if (history[l][TYPE] == KEYUP) {
            if (history[l-1][TYPE] == KEYDOWN || history[l-1][TYPE] == KEYUP || history[l-1][TYPE] == FLAGSCHANGED) {
-               kerning = drawn == CLICK ? 2 : 0;
-               x += 3 + kerning;
+               x += 3;
+               if (drawn == CLICK) x += 2;
+               if (x + 4 > width - border) {
+                   x = border;
+                   y += yIncrement;
+               }
                stroke(0, 128);
                rect((int) x, (int) y-2, 4, 4);
                x += 4;
